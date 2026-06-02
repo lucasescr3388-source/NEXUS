@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus — Central de Produtividade</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ff8c42" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nexus" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">NEXUS</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span></span><span></span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">◈</span>
+        <span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-item" data-view="tasks">
+        <span class="nav-icon">◻</span>
+        <span class="nav-label">Tarefas</span>
+      </button>
+      <button class="nav-item" data-view="pomodoro">
+        <span class="nav-icon">◷</span>
+        <span class="nav-label">Pomodoro</span>
+      </button>
+      <button class="nav-item" data-view="stats">
+        <span class="nav-icon">◬</span>
+        <span class="nav-label">Estatísticas</span>
+      </button>
+      <button class="nav-item" data-view="goals">
+        <span class="nav-icon">◎</span>
+        <span class="nav-label">Metas</span>
+      </button>
+      <button class="nav-item" data-view="ranking">
+        <span class="nav-icon">◑</span>
+        <span class="nav-label">Ranking</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+        <span class="theme-icon" id="themeIcon">☀</span>
+      </button>
+      <div class="sidebar-actions">
+        <button class="icon-btn" id="exportBtn" title="Exportar backup">↑</button>
+        <label class="icon-btn" title="Importar backup">
+          ↓<input type="file" id="importFile" accept=".json" style="display:none" />
+        </label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="page-title" id="pageTitle">Dashboard</span>
+        <span class="date-display" id="dateDisplay"></span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" id="newTaskBtn">
+          <span>+</span> Nova Tarefa
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEWS -->
+    <div class="views-container">
+
+      <!-- DASHBOARD VIEW -->
+      <section class="view active" id="view-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-icon">◻</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-total">0</span>
+              <span class="kpi-label">Tarefas Hoje</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-green">
+            <div class="kpi-icon">✓</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-done">0</span>
+              <span class="kpi-label">Concluídas</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-orange">
+            <div class="kpi-icon">◷</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-time">0h</span>
+              <span class="kpi-label">Tempo Produtivo</span>
+            </div>
+          </div>
+          <div class="kpi-card kpi-purple">
+            <div class="kpi-icon">◬</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-streak">0</span>
+              <span class="kpi-label">Dias Seguidos</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="card chart-card">
+            <div class="card-header">
+              <span class="card-title">Progresso Diário</span>
+              <span class="card-badge">Hoje</span>
+            </div>
+            <canvas id="dailyChart" height="200"></canvas>
+          </div>
+
+          <div class="card chart-card">
+            <div class="card-header">
+              <span class="card-title">Resumo Semanal</span>
+              <span class="card-badge">7 dias</span>
+            </div>
+            <canvas id="weeklyChart" height="200"></canvas>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Tarefas Pendentes</span>
+            </div>
+            <div class="task-mini-list" id="dashTaskList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Distribuição por Categoria</span>
+            </div>
+            <canvas id="catChart" height="220"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- TASKS VIEW -->
+      <section class="view" id="view-tasks">
+        <div class="tasks-toolbar">
+          <div class="filter-group">
+            <button class="filter-btn active" data-filter="all">Todas</button>
+            <button class="filter-btn" data-filter="study">
+              <span class="cat-dot cat-study"></span>Estudo
+            </button>
+            <button class="filter-btn" data-filter="exercise">
+              <span class="cat-dot cat-exercise"></span>Exercício
+            </button>
+            <button class="filter-btn" data-filter="art">
+              <span class="cat-dot cat-art"></span>Arte
+            </button>
+          </div>
+          <div class="filter-group">
+            <button class="filter-btn" data-status="all-status">Todas</button>
+            <button class="filter-btn" data-status="pending">Pendentes</button>
+            <button class="filter-btn" data-status="done">Concluídas</button>
+          </div>
+        </div>
+
+        <div class="task-list" id="taskList"></div>
+        <div class="empty-state" id="emptyTasks" style="display:none">
+          <span class="empty-icon">◻</span>
+          <p>Nenhuma tarefa encontrada.</p>
+          <button class="btn btn-primary" id="emptyNewTask">+ Nova Tarefa</button>
+        </div>
+      </section>
+
+      <!-- POMODORO VIEW -->
+      <section class="view" id="view-pomodoro">
+        <div class="pomodoro-container">
+          <div class="pomodoro-card">
+            <div class="pomodoro-mode-selector">
+              <button class="mode-btn active" data-focus="25" data-break="5">25/5</button>
+              <button class="mode-btn" data-focus="50" data-break="10">50/10</button>
+              <button class="mode-btn" data-focus="0" data-break="0" id="customModeBtn">Custom</button>
+            </div>
+
+            <div class="pomodoro-task-selector">
+              <label class="field-label">Tarefa vinculada</label>
+              <select id="pomodoroTaskSelect" class="select-input">
+                <option value="">— Nenhuma —</option>
+              </select>
+            </div>
+
+            <div class="pomodoro-phase-label" id="pomodoroPhase">FOCO</div>
+            <div class="pomodoro-ring">
+              <svg viewBox="0 0 200 200" class="ring-svg">
+                <circle class="ring-bg" cx="100" cy="100" r="88"/>
+                <circle class="ring-progress" id="ringProgress" cx="100" cy="100" r="88"
+                  stroke-dasharray="553" stroke-dashoffset="0"/>
+              </svg>
+              <div class="pomodoro-time" id="pomodoroTime">25:00</div>
+            </div>
+
+            <div class="pomodoro-controls">
+              <button class="pom-btn" id="pomRestart" title="Reiniciar">↺</button>
+              <button class="pom-btn pom-main" id="pomStart">▶</button>
+              <button class="pom-btn" id="pomSkip" title="Pular fase">⇥</button>
+            </div>
+
+            <div class="pomodoro-sessions">
+              <span class="session-label">Sessões hoje:</span>
+              <div class="session-dots" id="sessionDots"></div>
+            </div>
+          </div>
+
+          <div class="pomodoro-log-card card">
+            <div class="card-header">
+              <span class="card-title">Histórico de Sessões</span>
+            </div>
+            <div class="session-log" id="sessionLog"></div>
+          </div>
+        </div>
+
+        <!-- Custom modal -->
+        <div class="modal-overlay" id="customModal">
+          <div class="modal">
+            <div class="modal-header">
+              <span class="modal-title">Tempo Personalizado</span>
+              <button class="modal-close" id="closeCustomModal">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="field-group">
+                <label class="field-label">Foco (minutos)</label>
+                <input type="number" class="text-input" id="customFocus" value="45" min="1" max="120" />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Descanso (minutos)</label>
+                <input type="number" class="text-input" id="customBreak" value="10" min="1" max="60" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" id="cancelCustom">Cancelar</button>
+              <button class="btn btn-primary" id="applyCustom">Aplicar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS VIEW -->
+      <section class="view" id="view-stats">
+        <div class="stats-tabs">
+          <button class="stats-tab active" data-period="daily">Diário</button>
+          <button class="stats-tab" data-period="weekly">Semanal</button>
+          <button class="stats-tab" data-period="monthly">Mensal</button>
+          <button class="stats-tab" data-period="annual">Anual</button>
+        </div>
+
+        <!-- Daily -->
+        <div class="stats-panel active" id="stats-daily">
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-blue">
+              <div class="kpi-icon">◈</div>
+              <div class="kpi-data">
+                <span class="kpi-value" id="d-study">0h</span>
+                <span class="kpi-label">Estudo</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-green">
+              <div class="kpi-icon">◈</div>
+              <div class="kpi-data">
+                <span class="kpi-value" id="d-exercise">0h</span>
+                <span class="kpi-label">Exercício</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-orange">
+              <div class="kpi-icon">◈</div>
+              <div class="kpi-data">
+                <span class="kpi-value" id="d-art">0h</span>
+                <span class="kpi-label">Arte</span>
+              </div>
+            </div>
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-icon">◈</div>
+              <div class="kpi-data">
+                <span class="kpi-value" id="d-tasks">0</span>
+                <span class="kpi-label">Tarefas Concluídas</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-row">
+            <div class="card chart-card wide">
+              <div class="card-header"><span class="card-title">Horas por Categoria — Hoje</span></div>
+              <canvas id="statsDailyBar" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly -->
+        <div class="stats-panel" id="stats-weekly">
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-blue"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="w-study">0h</span><span class="kpi-label">Estudo Total</span></div></div>
+            <div class="kpi-card kpi-green"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="w-exercise">0h</span><span class="kpi-label">Exercício Total</span></div></div>
+            <div class="kpi-card kpi-orange"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="w-art">0h</span><span class="kpi-label">Arte Total</span></div></div>
+            <div class="kpi-card kpi-purple"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="w-avg">0h</span><span class="kpi-label">Média Diária</span></div></div>
+          </div>
+          <div class="chart-row">
+            <div class="card chart-card wide">
+              <div class="card-header"><span class="card-title">Evolução Semanal</span></div>
+              <canvas id="statsWeeklyLine" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly -->
+        <div class="stats-panel" id="stats-monthly">
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-blue"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="m-study">0h</span><span class="kpi-label">Estudo</span></div></div>
+            <div class="kpi-card kpi-green"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="m-exercise">0h</span><span class="kpi-label">Exercício</span></div></div>
+            <div class="kpi-card kpi-orange"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="m-art">0h</span><span class="kpi-label">Arte</span></div></div>
+            <div class="kpi-card kpi-purple"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="m-total">0h</span><span class="kpi-label">Total Acumulado</span></div></div>
+          </div>
+          <div class="chart-row two-col">
+            <div class="card chart-card">
+              <div class="card-header"><span class="card-title">Evolução por Semana</span></div>
+              <canvas id="statsMonthBar" height="220"></canvas>
+            </div>
+            <div class="card chart-card">
+              <div class="card-header"><span class="card-title">Distribuição</span></div>
+              <canvas id="statsMonthPie" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Annual -->
+        <div class="stats-panel" id="stats-annual">
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-blue"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="a-total">0h</span><span class="kpi-label">Total no Ano</span></div></div>
+            <div class="kpi-card kpi-green"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="a-tasks">0</span><span class="kpi-label">Tarefas Concluídas</span></div></div>
+            <div class="kpi-card kpi-orange"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="a-top">—</span><span class="kpi-label">Maior Dedicação</span></div></div>
+            <div class="kpi-card kpi-purple"><div class="kpi-icon">◈</div><div class="kpi-data"><span class="kpi-value" id="a-avg">0h</span><span class="kpi-label">Média Mensal</span></div></div>
+          </div>
+          <div class="chart-row">
+            <div class="card chart-card wide">
+              <div class="card-header"><span class="card-title">Horas por Mês</span></div>
+              <canvas id="statsAnnualLine" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- GOALS VIEW -->
+      <section class="view" id="view-goals">
+        <div class="goals-grid">
+          <div class="card goal-card">
+            <div class="card-header">
+              <span class="card-title">Meta Diária</span>
+              <button class="edit-goal-btn" data-period="daily">Editar</button>
+            </div>
+            <div class="goal-body">
+              <div class="goal-target-row">
+                <span class="goal-target-val" id="goal-daily-val">0h</span>
+                <span class="goal-target-label">meta por dia</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" id="goal-daily-bar" style="width:0%"></div>
+              </div>
+              <div class="goal-progress-label" id="goal-daily-label">0h / 0h</div>
+              <div class="goal-cats">
+                <div class="goal-cat">
+                  <span class="cat-dot cat-study"></span>
+                  <span>Estudo</span>
+                  <div class="mini-progress"><div class="mini-bar cat-study-bg" id="gd-study" style="width:0%"></div></div>
+                </div>
+                <div class="goal-cat">
+                  <span class="cat-dot cat-exercise"></span>
+                  <span>Exercício</span>
+                  <div class="mini-progress"><div class="mini-bar cat-exercise-bg" id="gd-exercise" style="width:0%"></div></div>
+                </div>
+                <div class="goal-cat">
+                  <span class="cat-dot cat-art"></span>
+                  <span>Arte</span>
+                  <div class="mini-progress"><div class="mini-bar cat-art-bg" id="gd-art" style="width:0%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card goal-card">
+            <div class="card-header">
+              <span class="card-title">Meta Semanal</span>
+              <button class="edit-goal-btn" data-period="weekly">Editar</button>
+            </div>
+            <div class="goal-body">
+              <div class="goal-target-row">
+                <span class="goal-target-val" id="goal-weekly-val">0h</span>
+                <span class="goal-target-label">meta por semana</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" id="goal-weekly-bar" style="width:0%"></div>
+              </div>
+              <div class="goal-progress-label" id="goal-weekly-label">0h / 0h</div>
+            </div>
+          </div>
+
+          <div class="card goal-card">
+            <div class="card-header">
+              <span class="card-title">Meta Mensal</span>
+              <button class="edit-goal-btn" data-period="monthly">Editar</button>
+            </div>
+            <div class="goal-body">
+              <div class="goal-target-row">
+                <span class="goal-target-val" id="goal-monthly-val">0h</span>
+                <span class="goal-target-label">meta por mês</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" id="goal-monthly-bar" style="width:0%"></div>
+              </div>
+              <div class="goal-progress-label" id="goal-monthly-label">0h / 0h</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RANKING VIEW -->
+      <section class="view" id="view-ranking">
+        <div class="ranking-header">
+          <div class="ranking-period-selector">
+            <button class="filter-btn active" data-rank-period="month">Este Mês</button>
+            <button class="filter-btn" data-rank-period="week">Esta Semana</button>
+            <button class="filter-btn" data-rank-period="year">Este Ano</button>
+          </div>
+        </div>
+
+        <div class="ranking-grid">
+          <div class="ranking-podium" id="rankingPodium"></div>
+
+          <div class="card ranking-detail-card">
+            <div class="card-header"><span class="card-title">Detalhamento</span></div>
+            <div class="ranking-details" id="rankingDetails"></div>
+          </div>
+
+          <div class="card chart-card wide">
+            <div class="card-header"><span class="card-title">Comparativo de Categorias</span></div>
+            <canvas id="rankingChart" height="220"></canvas>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- TASK MODAL -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="taskModalTitle">Nova Tarefa</span>
+        <button class="modal-close" id="closeTaskModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label">Nome da tarefa *</label>
+          <input type="text" class="text-input" id="taskName" placeholder="Ex: Estudar React" />
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Categoria *</label>
+            <select class="select-input" id="taskCategory">
+              <option value="study">📚 Estudo</option>
+              <option value="exercise">🏋️ Exercício</option>
+              <option value="art">🎨 Arte</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Data *</label>
+            <input type="date" class="text-input" id="taskDate" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Descrição (opcional)</label>
+          <textarea class="text-input textarea" id="taskDesc" placeholder="Detalhes da tarefa..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelTask">Cancelar</button>
+        <button class="btn btn-primary" id="saveTask">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GOAL EDIT MODAL -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="goalModalTitle">Editar Meta</span>
+        <button class="modal-close" id="closeGoalModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label">Horas de produtividade</label>
+          <input type="number" class="text-input" id="goalHours" min="0.5" max="24" step="0.5" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelGoal">Cancelar</button>
+        <button class="btn btn-primary" id="saveGoal">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION -->
+  <div class="notification" id="notification">
+    <span id="notifText"></span>
+  </div>
+
+  <audio id="pomAudio" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA..." preload="auto" style="display:none"></audio>
+
+  <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(r => console.log('SW registrado:', r.scope))
+          .catch(e => console.log('SW erro:', e));
+      });
+    }
+  </script>
+</body>
+</html>
